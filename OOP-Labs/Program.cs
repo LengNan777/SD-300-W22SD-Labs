@@ -26,6 +26,19 @@ Console.WriteLine(machine.getSerialNumber());
 VendingMachine machine2 = new VendingMachine("Machine 2");
 Console.WriteLine(machine2.getSerialNumber());
 
+//Test for lab 3.
+Product p1 = new Product(null, 1, "MILK1");
+Product p2 = new Product("milk", 1, null);
+Product p3 = new Product("milk", -1, "MILK1");
+
+VendingMachine machine3 = new VendingMachine(null);
+
+machine.StockItem(cola, -1);
+
+machine.VendItem(null, new List<int> { 5 });
+machine.VendItem("cola",new List<int> {});
+
+
 class VendingMachine
 {
     public static int MachineNumber { get; set; } = 1;
@@ -38,6 +51,18 @@ class VendingMachine
 
     public VendingMachine(string barcode)
     {
+        try
+        {
+            if (barcode == null)
+            {
+                throw new ArgumentNullException();
+            }
+            Barcode = barcode;
+        }
+        catch(ArgumentNullException ex)
+        {
+            Console.WriteLine("Exception: "+ex.Message);
+        }
         SerialNumber = MachineNumber;
         MachineNumber++;
         MoneyFloat = new Dictionary<int, int>();
@@ -46,23 +71,35 @@ class VendingMachine
             MoneyFloat.Add(denomination, 0);
         }
         Inventory = new Dictionary<Product, int>();
-        Barcode = barcode;
+        
     }
 
     public string StockItem(Product product, int quantity)
     {
-        if (Inventory.ContainsKey(product))
-        {
-            Inventory[product] += quantity;
+        try
+        {   
+            if(quantity <= 0)
+            {
+                throw new Exception("The quantity of product should not be a negative number.");
+            }
+            if (Inventory.ContainsKey(product))
+            {
+                Inventory[product] += quantity;
+            }
+            else
+            {
+                Inventory.Add(product, quantity);
+            }
+            return $"{product.Name}\n" +
+                $"Code: {product.Code}\n" +
+                $"Price: {product.Price}\n" +
+                $"Quantity:{Inventory[product]}";
         }
-        else
+        catch(Exception ex)
         {
-            Inventory.Add(product, quantity);
+            Console.WriteLine("Exception: " + ex.Message);
         }
-        return $"{product.Name}\n" +
-            $"Code: {product.Code}\n" +
-            $"Price: {product.Price}\n" +
-            $"Quantity:{Inventory[product]}";
+        return null;
     }
 
     public string StockFloat(int moneyDenomination, int quantity)
@@ -85,62 +122,78 @@ class VendingMachine
 
     public string VendItem(string code, List<int> money)
     {
-        foreach(KeyValuePair<Product,int> product in Inventory)
+        try
         {
-            if(product.Key.Code == code)
+            if (code == null)
             {
-                Product wantedProduct = product.Key;
-                if (Inventory[wantedProduct] > 0)
+                throw new Exception("Please enter code.");
+            }
+            if(money.Count == 0)
+            {
+                throw new Exception("Please enter right amount of money");
+            }
+            foreach(KeyValuePair<Product,int> product in Inventory)
+            {
+                if(product.Key.Code == code)
                 {
-                    int insertedMoney = 0;
-                    foreach(int coin in money)
+                    Product wantedProduct = product.Key;
+                    if (Inventory[wantedProduct] > 0)
                     {
-                        insertedMoney += coin;
-                    }
-                    if(insertedMoney > wantedProduct.Price)
-                    {
-                        int returnedMoney = insertedMoney - wantedProduct.Price;
-                        int finalReturnMoney = returnedMoney;
-                        Dictionary<int, int> copyMoneyFloat = new Dictionary<int, int>(MoneyFloat);
-                        Inventory[wantedProduct]--;
-                        //Try to change.                        
-                        foreach(int denomination in allDenomination)
+                        int insertedMoney = 0;
+                        foreach(int coin in money)
                         {
-                            while(returnedMoney >= denomination && MoneyFloat[denomination] > 0)
-                            {
-                                returnedMoney -= denomination;
-                                MoneyFloat[denomination]--;
-                            }
+                            insertedMoney += coin;
                         }
-                        if(returnedMoney == 0)
+                        if(insertedMoney > wantedProduct.Price)
                         {
-                            //Success to puchase.
+                            int returnedMoney = insertedMoney - wantedProduct.Price;
+                            int finalReturnMoney = returnedMoney;
+                            Dictionary<int, int> copyMoneyFloat = new Dictionary<int, int>(MoneyFloat);
                             Inventory[wantedProduct]--;
-                            return $"Please enjoy your {wantedProduct.Name} and take your change of ${finalReturnMoney}.";
+                            //Try to change.                        
+                            foreach(int denomination in allDenomination)
+                            {
+                                while(returnedMoney >= denomination && MoneyFloat[denomination] > 0)
+                                {
+                                    returnedMoney -= denomination;
+                                    MoneyFloat[denomination]--;
+                                }
+                            }
+                            if(returnedMoney == 0)
+                            {
+                                //Success to puchase.
+                                Inventory[wantedProduct]--;
+                                return $"Please enjoy your {wantedProduct.Name} and take your change of ${finalReturnMoney}.";
+                            }
+                            else
+                            {
+                                //Fail to change, recover the money list to the original version.
+                                MoneyFloat = copyMoneyFloat;
+                                return "Error: insufficient money to change.";
+                            }
                         }
                         else
                         {
-                            //Fail to change, recover the money list to the original version.
-                            MoneyFloat = copyMoneyFloat;
-                            return "Error: insufficient money to change.";
+                            return "Error: insufficient money provided.";
                         }
                     }
                     else
                     {
-                        return "Error: insufficient money provided.";
+                        return "Error: Item is out of stock.";
                     }
                 }
                 else
                 {
-                    return "Error: Item is out of stock.";
+                    return $"Error, no item with code {code}.";
                 }
             }
-            else
-            {
-                return $"Error, no item with code {code}.";
-            }
+            return "Error, no item in this machine.";
         }
-        return "Erro, no item in this machine.";
+        catch(Exception ex)
+        {
+            Console.WriteLine("Exception: "+ex.Message);
+        }
+        return null;
     }
 
     public int getSerialNumber()
@@ -157,8 +210,28 @@ class Product
 
     public Product(string name, int price, string code)
     {
-        Name = name;
-        Price = price;
-        Code = code;
+        try
+        {
+            if (name == null)
+            {
+                throw new Exception("Name of product should not be null.");
+            }
+            if (code == null)
+            {
+                throw new Exception("Code of product should not be null.");
+            }
+            if (price <= 0)
+            {
+                throw new Exception("Price of product should be a positive number.");
+            }
+            Name = name;
+            Price = price;
+            Code = code;
+            
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine("Exception: "+e.Message);
+        }
     }   
 }
