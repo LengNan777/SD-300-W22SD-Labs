@@ -1,5 +1,5 @@
 ﻿Product cola = new Product("cola", 3, "Drink1");
-VendingMachine machine = new VendingMachine(1);
+VendingMachine machine = new VendingMachine("Machine 1");
 Console.WriteLine(machine.StockItem(cola, 2));
 
 Console.WriteLine(machine.StockFloat(1, 10));
@@ -21,23 +21,32 @@ Console.WriteLine(machine.StockItem(cola, 5));
 List<int> userMoney5 = new List<int> { 1 };
 Console.WriteLine(machine.VendItem("Drink1", userMoney5));
 
+//Test for lab 2.
+Console.WriteLine(machine.getSerialNumber());
+VendingMachine machine2 = new VendingMachine("Machine 2");
+Console.WriteLine(machine2.getSerialNumber());
 
 class VendingMachine
 {
-    public int SerialNumber { get; set; }
-    public Dictionary<int, int> MoneyFloat { get; set; }
-    public Dictionary<Product, int> Inventory { get; set; }
-    public List<int> allDenomination = new List<int> { 20, 10, 5, 2, 1 };
+    public static int MachineNumber { get; set; } = 1;
+    private int SerialNumber { get; set; }   
+    private Dictionary<int, int> MoneyFloat { get; set; }
+    private Dictionary<Product, int> Inventory { get; set; }
 
-    public VendingMachine(int serialNumber)
+    private readonly List<int> allDenomination = new List<int> { 20, 10, 5, 2, 1 };
+    private readonly string Barcode;
+
+    public VendingMachine(string barcode)
     {
-        SerialNumber = serialNumber;
+        SerialNumber = MachineNumber;
+        MachineNumber++;
         MoneyFloat = new Dictionary<int, int>();
         foreach (int denomination in allDenomination)
         {
             MoneyFloat.Add(denomination, 0);
-        }     
+        }
         Inventory = new Dictionary<Product, int>();
+        Barcode = barcode;
     }
 
     public string StockItem(Product product, int quantity)
@@ -132,6 +141,11 @@ class VendingMachine
             }
         }
         return "Erro, no item in this machine.";
+    }
+
+    public int getSerialNumber()
+    {
+        return SerialNumber;
     }
 }
 
